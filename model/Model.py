@@ -15,6 +15,9 @@ from babel.dates import format_date
 from nmt_utils import *
 import matplotlib.pyplot as plt
 
+# Global variables
+
+
 
 def one_step_attention(a, s_prev):
     """
@@ -45,7 +48,7 @@ def one_step_attention(a, s_prev):
     return context
 
 
-def model(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size):
+def create_model(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size):
     """
     Arguments:
     Tx -- length of the input sequence
@@ -134,7 +137,7 @@ def compile_and_run():
     
     
     
-    model = model(Tx, Ty, n_a, n_s, len(human_vocab), len(machine_vocab))
+    model = create_model(Tx, Ty, n_a, n_s, len(human_vocab), len(machine_vocab))
     
     opt = model.compile(optimizer = Adam(lr = 0.005, beta_1 = 0.9, beta_2 = 0.999, decay = 0.01), metrics = ['accuracy'], loss = 'categorical_crossentropy')
     opt

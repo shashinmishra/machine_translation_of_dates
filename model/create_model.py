@@ -14,10 +14,32 @@ from tqdm import tqdm
 from babel.dates import format_date
 from nmt_utils import *
 import matplotlib.pyplot as plt
+import datetime
 
 # Global variables
+# Defining the maximum size of the input human readable date
+Tx = 30
 
+# Define the dataset size for training. We will be synthesizing the data using 
+# faker
+m = 10000
+# Generate data using faker. load_dataset is defined in nmt_utils
+dataset, human_vocab, machine_vocab, inv_machine_vocab = load_dataset(m)
+    
+# Defined shared layers as global variables
+repeator = RepeatVector(Tx)
+concatenator = Concatenate(axis=-1)
+densor1 = Dense(10, activation = "tanh")
+densor2 = Dense(1, activation = "relu")
+activator = Activation(softmax, name='attention_weights') # We are using a custom softmax(axis = 1) loaded in this notebook
+dotor = Dot(axes = 1)
 
+# hidden state size of the post-attention LSTM
+n_s = 64
+
+post_activation_LSTM_cell = LSTM(n_s, return_state = True)
+
+output_layer = Dense(len(machine_vocab), activation=softmax)
 
 def one_step_attention(a, s_prev):
     """
@@ -101,41 +123,14 @@ def create_model(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size):
 
 
 def compile_and_run():
-    # Define the dataset size for training. We will be synthesizing the data using 
-    # faker
-    m = 10000
-    # Generate data using faker. load_dataset is defined in nmt_utils
-    dataset, human_vocab, machine_vocab, inv_machine_vocab = load_dataset(m)
-    
-    
-    # Defining the maximum size of the input human readable date
-    Tx = 30
-    
     # Defining the size of the machine readable output date
     Ty = 10
     
     # Get data ready for processing
-    X, Y, Xoh, Yoh = preprocess_data(dataset, human_vocab, machine_vocab, Tx, Ty)
-    
-    # Defined shared layers as global variables
-    repeator = RepeatVector(Tx)
-    concatenator = Concatenate(axis=-1)
-    densor1 = Dense(10, activation = "tanh")
-    densor2 = Dense(1, activation = "relu")
-    activator = Activation(softmax, name='attention_weights') # We are using a custom softmax(axis = 1) loaded in this notebook
-    dotor = Dot(axes = 1)
-    
+    X, Y, Xoh, Yoh = preprocess_data(dataset, human_vocab, machine_vocab, Tx, Ty)    
     
     # hidden state size of the Bi-LSTM
     n_a = 32
-    # hidden state size of the post-attention LSTM
-    n_s = 64
-    
-    post_activation_LSTM_cell = LSTM(n_s, return_state = True)
-    
-    output_layer = Dense(len(machine_vocab), activation=softmax)
-    
-    
     
     model = create_model(Tx, Ty, n_a, n_s, len(human_vocab), len(machine_vocab))
     
@@ -146,6 +141,6 @@ def compile_and_run():
     c0 = np.zeros((m, n_s))
     outputs = list(Yoh.swapaxes(0,1))
     
-    model.fit([Xoh, s0, c0], outputs, epochs=5, batch_size=64)
-    model.save_weights('weights.h5')
+    model.fit([Xoh, s0, c0], outputs, epochs=1, batch_size=64)
+    model.save_weights('weights' + str(datetime.datetime.now()) + '.h5')
     return
